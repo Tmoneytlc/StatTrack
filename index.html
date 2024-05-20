@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StatTrack</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .section {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+
+        .column {
+            width: 45%;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+
+        .column h2 {
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+
+        .editable {
+            display: inline-block;
+            padding: 5px;
+            border: 1px dashed #ccc;
+            margin: 5px 0;
+            width: 100%;
+        }
+
+        .editable:focus {
+            border: 1px solid #007BFF;
+            outline: none;
+        }
+
+        .total-box {
+            display: inline-block;
+            padding: 5px;
+            border: 1px solid #ccc;
+            width: 50px;
+            text-align: right;
+        }
+
+        button {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .export-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>StatTrack</h1>
+        <div class="section">
+            <div class="column" id="home-column">
+                <h2>Home <span class="editable" contenteditable="true">Team Name</span></h2>
+                <div class="editable" contenteditable="true">Free Type Ex: Shots on Goal</div>
+                <div>Running total <span id="home-total-1" class="total-box">0</span></div>
+                <button onclick="incrementTotal('home-total-1')">Count Button</button>
+                <div class="editable" contenteditable="true">Free Type Ex: Goals</div>
+                <div>Running total <span id="home-total-2" class="total-box">0</span></div>
+                <button onclick="incrementTotal('home-total-2')">Count Button</button>
+                <div class="editable" contenteditable="true">Free Type Ex: Saves</div>
+                <div>Running total <span id="home-total-3" class="total-box">0</span></div>
+                <button onclick="incrementTotal('home-total-3')">Count Button</button>
+                <div class="editable" contenteditable="true">Free Type Ex: Assists</div>
+                <div>Running total <span id="home-total-4" class="total-box">0</span></div>
+                <button onclick="incrementTotal('home-total-4')">Count Button</button>
+                <button onclick="addStat('home')">Add Stat</button>
+            </div>
+            <div class="column" id="away-column">
+                <h2>Away <span class="editable" contenteditable="true">Team Name</span></h2>
+                <div class="editable" contenteditable="true">Free Type Ex: Shots on Goal</div>
+                <div>Running total <span id="away-total-1" class="total-box">0</span></div>
+                <button onclick="incrementTotal('away-total-1')">Count Button</button>
+                <div class="editable" contenteditable="true">Free Type Ex: Goals</div>
+                <div>Running total <span id="away-total-2" class="total-box">0</span></div>
+                <button onclick="incrementTotal('away-total-2')">Count Button</button>
+                <div class="editable" contenteditable="true">Free Type Ex: Saves</div>
+                <div>Running total <span id="away-total-3" class="total-box">0</span></div>
+                <button onclick="incrementTotal('away-total-3')">Count Button</button>
+                <div class="editable" contenteditable="true">Free Type Ex: Assists</div>
+                <div>Running total <span id="away-total-4" class="total-box">0</span></div>
+                <button onclick="incrementTotal('away-total-4')">Count Button</button>
+                <button onclick="addStat('away')">Add Stat</button>
+            </div>
+        </div>
+        <div class="export-buttons">
+            <button onclick="exportToCSV()">Export to CSV</button>
+        </div>
+    </div>
+    <script>
+        let homeStatCount = 4;
+        let awayStatCount = 4;
+
+        function incrementTotal(id) {
+            var element = document.getElementById(id);
+            var currentTotal = parseInt(element.innerText);
+            element.innerText = currentTotal + 1;
+        }
+
+        function addStat(team) {
+            const teamColumn = document.getElementById(`${team}-column`);
+            const statCount = team === 'home' ? ++homeStatCount : ++awayStatCount;
+            const newStatHTML = `
+                <div class="editable" contenteditable="true">Free Type</div>
+                <div>Running total <span id="${team}-total-${statCount}" class="total-box">0</span></div>
+                <button onclick="incrementTotal('${team}-total-${statCount}')">Count Button</button>
+            `;
+            teamColumn.insertAdjacentHTML('beforeend', newStatHTML);
+        }
+
+        function gatherData() {
+            const columns = document.querySelectorAll('.column');
+            const data = [];
+
+            columns.forEach(column => {
+                const header = column.querySelector('h2').innerText;
+                data.push([header]);
+
+                const editables = column.querySelectorAll('.editable');
+                editables.forEach((editable, index) => {
+                    const countElement = column.querySelector(`#${column.id.includes('home') ? 'home' : 'away'}-total-${index + 1}`);
+                    const count = countElement ? countElement.innerText : 0;
+                    data.push([editable.innerText, count]);
+                });
+
+                data.push([]);
+            });
+
+            return data;
+        }
+
+        function exportToCSV() {
+            const data = gatherData();
+            let csvContent = "data:text/csv;charset=utf-8,";
+            data.forEach(rowArray => {
+                const row = rowArray.join(",");
+                csvContent += row + "\r\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "stat_counter.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
+    </script>
+</body>
+</html>
